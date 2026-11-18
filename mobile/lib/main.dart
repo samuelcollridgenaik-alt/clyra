@@ -4,7 +4,6 @@ void main(){WidgetsFlutterBinding.ensureInitialized();runApp(const ClyraApp());}
 class ClyraApp extends StatefulWidget{const ClyraApp({super.key});@override State<ClyraApp> createState()=>_ClyraAppState();}
 class _ClyraAppState extends State<ClyraApp>{final api=ClyraApi();bool ready=false;@override void initState(){super.initState();api.restore().whenComplete(()=>setState(()=>ready=true));}
 @override Widget build(BuildContext context)=>MaterialApp(title:'Clyra',debugShowCheckedModeBanner:false,theme:ClyraTheme.light,home:!ready?const Scaffold(body:Center(child:CircularProgressIndicator())):api.currentUser==null?LoginScreen(api:api,onLogin:()=>setState((){})):MainShell(api:api,onLogout:()async{await api.logout();setState((){});}),);}
-}
 class MainShell extends StatefulWidget{const MainShell({super.key,required this.api,required this.onLogout});final ClyraApi api;final VoidCallback onLogout;@override State<MainShell> createState()=>_MainShellState();}
 class _MainShellState extends State<MainShell>{int index=0;int complaintRevision=0;
  Future<void> openReport() async {await Navigator.push(context,MaterialPageRoute(builder:(_)=>ReportScreen(api:widget.api)));if(mounted)setState(()=>complaintRevision++);}

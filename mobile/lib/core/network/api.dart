@@ -17,7 +17,7 @@ class ClyraApi {
   Future<void> restore() async {
     final refresh=await _storage.read(key:'clyra_refresh');
     if(refresh==null)return;
-    try{final data=await post('/auth/refresh',{'refreshToken':refresh},retry:false);await _applySession(data);}catch(_){await logout(localOnly:true);}
+    try{final data=await post('/auth/refresh',{'refreshToken':refresh},retry:false,headers:{'X-Client':'mobile'});await _applySession(data);}catch(_){await logout(localOnly:true);}
   }
   Future<void> _applySession(dynamic data) async {
     accessToken=data['accessToken'] as String?;

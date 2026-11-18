@@ -1,0 +1,22 @@
+import { z } from 'zod';
+import mongoose from 'mongoose';
+import { CATEGORIES,PRIORITIES } from '../models/index.js';
+export const objectId=z.string().refine(v=>mongoose.isValidObjectId(v),'Invalid ID');
+export const text=(min=1,max=500)=>z.string().trim().min(min).max(max);
+export const reason=z.object({reason:text(4,1000)}).strict();
+export const register=z.object({fullName:text(2,120),email:z.string().email().max(254).toLowerCase(),password:z.string().min(12).max(128),registrationId:text(1,60).optional()}).strict();
+export const login=z.object({email:z.string().email().toLowerCase(),password:z.string().min(1)}).strict();
+export const createUser=register.extend({role:z.enum(['STUDENT','FACULTY','STAFF','ADMIN']),departmentId:objectId.optional(),employeeId:text(1,50).optional(),course:text(1,120).optional(),designation:text(1,120).optional()});
+export const profile=z.object({fullName:text(2,120).optional(),phone:z.string().max(24).optional(),course:z.string().max(120).optional(),designation:z.string().max(120).optional()}).strict();
+export const department=z.object({name:text(2,120),code:text(2,30),description:z.string().max(500).optional(),contactEmail:z.string().email().optional(),contactPhone:z.string().max(24).optional()}).strict();
+export const departmentPatch=department.partial();
+export const location=z.object({name:text(2,120),code:text(1,40).optional(),type:z.enum(['CAMPUS','BUILDING','FLOOR','ROOM','COMMON_AREA']),parentLocationId:objectId.nullish(),description:z.string().max(500).optional()}).strict();
+export const locationPatch=location.partial();
+export const complaint=z.object({title:text(5,160),description:text(10,5000),locationId:objectId,category:z.enum(CATEGORIES).optional(),imageUrls:z.array(z.string().url()).max(5).optional()}).strict();
+export const complaintPatch=z.object({title:text(5,160).optional(),description:text(10,5000).optional()}).strict();
+export const review=z.object({decision:z.enum(['APPROVE','REJECT']),reason:text(4,1000).optional(),category:z.enum(CATEGORIES).optional(),priority:z.enum(PRIORITIES).optional(),overrideReason:text(4,1000).optional()}).strict();
+export const assign=z.object({departmentId:objectId,assignedTo:objectId,reason:text(4,1000).optional()}).strict();
+export const evidence=z.object({evidenceUrls:z.array(z.string().url()).min(1).max(8),remarks:text(4,1000).optional()}).strict();
+export const feedback=z.object({complaintId:objectId,rating:z.number().int().min(1).max(5),comment:z.string().max(1000).optional()}).strict();
+export const announcement=z.object({title:text(4,160),description:text(5,3000),audience:z.array(z.enum(['STUDENT','FACULTY','STAFF','ADMIN'])).min(1),imageUrl:z.string().url().optional(),publishAt:z.string().datetime().optional(),expiresAt:z.string().datetime().optional(),isPublished:z.boolean().optional()}).strict();
+export function paging(query){const page=Math.min(100000,Math.max(1,Number.parseInt(query.page,10)||1));const limit=Math.min(100,Math.max(1,Number.parseInt(query.limit,10)||20));return{page,limit,skip:(page-1)*limit};}

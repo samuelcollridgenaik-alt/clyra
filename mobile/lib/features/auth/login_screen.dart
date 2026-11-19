@@ -17,5 +17,5 @@ class _LoginScreenState extends State<LoginScreen>{
   TextFormField(controller:password,obscureText:hidden,decoration:InputDecoration(labelText:'Password',suffixIcon:IconButton(onPressed:()=>setState(()=>hidden=!hidden),icon:Icon(hidden?Icons.visibility:Icons.visibility_off))),validator:(v)=>(v??'').isNotEmpty?null:'Enter password'),const SizedBox(height:20),
   if(error!=null)...[Text(error!,style:const TextStyle(color:Colors.red)),const SizedBox(height:12)],
   ElevatedButton(onPressed:busy?null:submit,child:Text(busy?'Signing in…':'Sign in to Clyra')),const SizedBox(height:22),const Text('Accounts are managed according to your campus enrollment policy.',textAlign:TextAlign.center,style:TextStyle(color:Colors.black54,fontSize:12)),
- ]))))));
+ ])))))));
 }

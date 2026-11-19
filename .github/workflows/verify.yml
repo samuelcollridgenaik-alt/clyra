@@ -1,0 +1,102 @@
+name: Clyra verification
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: clyra-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ping:1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      CLYRA_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/clyra_ci_test
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Syntax checks
+        run: npm run check
+      - name: State-machine tests
+        run: npm test
+      - name: End-to-end API and MongoDB lifecycle
+        run: npm run test:integration
+
+  web:
+    name: React production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build web app
+        run: npm run build
+
+  flutter:
+    name: Flutter analyze, test and Android debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Generate missing Android platform files
+        run: |
+          flutter create --platforms=android --project-name clyra .
+          # flutter create adds an example MyApp test when the Android scaffold is missing.
+          # Keep existing tracked tests, remove only the untracked template.
+          if ! git ls-files --error-unmatch test/widget_test.dart >/dev/null 2>&1; then
+            rm -f test/widget_test.dart
+          fi
+      - name: Install Flutter packages
+        run: flutter pub get
+      - name: Analyze Dart source
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Run Flutter tests
+        run: flutter test
+      - name: Build Android debug APK
+        run: flutter build apk --debug --dart-define=API_BASE_URL=http://10.0.2.2:4000/api/v1
+      - name: Attach Android APK to workflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: clyra-android-debug
+          path: mobile/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7

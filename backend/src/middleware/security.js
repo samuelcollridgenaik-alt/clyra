@@ -1,7 +1,8 @@
 import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/env.js';
-import { User } from '../models/index.js';
+import mongoose from 'mongoose';
+import { User, Session } from '../models/index.js';
 export class HttpError extends Error {constructor(status,message,code='REQUEST_ERROR'){super(message);this.status=status;this.code=code;}}
 export const asyncRoute = fn=>(req,res,next)=>Promise.resolve(fn(req,res,next)).catch(next);
 export function requestId(req,res,next){req.id=crypto.randomUUID();res.setHeader('X-Request-ID',req.id);next();}
@@ -10,8 +11,10 @@ export function requireAuth(req,res,next){
   if(!token)return next(new HttpError(401,'Authentication required','UNAUTHENTICATED'));
   try{req.claims=jwt.verify(token,config.jwtSecret,{algorithms:['HS256'],issuer:config.issuer,audience:config.audience});}
   catch{return next(new HttpError(401,'Invalid or expired access token','INVALID_TOKEN'));}
-  User.findById(req.claims.sub).then(user=>{
+  if(!mongoose.isValidObjectId(req.claims.sub)||!mongoose.isValidObjectId(req.claims.sid))return next(new HttpError(401,'Sign in again','INVALID_TOKEN'));
+  Promise.all([User.findById(req.claims.sub),Session.exists({_id:req.claims.sid,userId:req.claims.sub,revokedAt:{$exists:false},expiresAt:{$gt:new Date()}})]).then(([user,session])=>{
     if(!user||!user.isActive)throw new HttpError(401,'Account inactive or unavailable','ACCOUNT_DISABLED');
+    if(!session)throw new HttpError(401,'Session has ended; sign in again','SESSION_REVOKED');
     req.user=user;next();
   }).catch(next);
 }

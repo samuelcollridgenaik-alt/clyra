@@ -10,6 +10,7 @@ export const config = {
   corsOrigins: (raw.CORS_ORIGINS || 'http://localhost:5173').split(',').map(x=>x.trim()),
   studentRegistration: raw.ALLOW_STUDENT_REGISTRATION === 'true',
   studentDomain: raw.STUDENT_EMAIL_DOMAIN?.trim().toLowerCase() || '',
+  textOnlyResolution: raw.NODE_ENV !== 'production' && raw.ALLOW_TEXT_ONLY_RESOLUTION === 'true',
   aiUrl: raw.AI_BASE_URL || 'http://127.0.0.1:8000',
   aiSecret: raw.AI_SHARED_SECRET || '',
 };

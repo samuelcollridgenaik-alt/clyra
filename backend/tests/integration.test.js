@@ -30,6 +30,8 @@ test('real MongoDB grievance lifecycle, security and transaction regressions', {
   assert.deepEqual(disconnected.body, {status:'not_ready',service:'clyra-api',database:'unavailable'});
   await mongoose.connect(mongoUri, {serverSelectionTimeoutMS: 12000});
   try {
+    // The strict URI allowlist above confines reset/cleanup to disposable local CI databases.
+    await mongoose.connection.dropDatabase();
     await Promise.all(Object.values(mongoose.models).map(model=>model.init()));
     const passwordHash = await bcrypt.hash('OnlyForCiTests!2026', 8);
     const dept = await Department.create({name:'Campus maintenance', code:'CIMT'});
@@ -373,6 +375,7 @@ test('real MongoDB grievance lifecycle, security and transaction regressions', {
       const login=await api.post('/api/v1/auth/login').send({email:student.email,password:'OnlyForCiTests!2026'});assert.equal(login.status,401,login.text);
     });
   } finally {
-    await mongoose.disconnect();
+    try { await mongoose.connection.dropDatabase(); }
+    finally { await mongoose.disconnect(); }
   }
 });

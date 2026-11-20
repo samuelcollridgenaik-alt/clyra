@@ -2,6 +2,8 @@
 
 The owner requested GitHub-connected web hosting and APK sideloading, and confirmed **no hosted backend exists yet**. With no `VITE_API_BASE_URL`, the hosted frontend displays a backend-not-connected notice and disables login; it never sends visitor credentials to localhost.
 
+Frontend: **https://clyra-lake.vercel.app**. GitHub integration is connected and its production branch remains `main`; PR branches receive previews. The initial delivery was published from the reviewed delivery branch without merging it.
+
 ## Project settings
 
 | Setting | Value |

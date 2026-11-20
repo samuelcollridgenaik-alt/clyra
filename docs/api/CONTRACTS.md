@@ -69,7 +69,7 @@ Possible status codes: 400 bad input, 401 unauthenticated, 403 scope or policy f
 
 **Internal FastAPI:** `/ai/health`, `/ai/model-info`, `/ai/classify`, `/ai/priority`, `/ai/duplicates`, `/ai/analyze`, `/ai/insights`. Protected inference endpoints require `X-AI-Service-Key`. React and Flutter MUST NOT call these endpoints. A missing model returns 503 or an explicit unavailable state; Node saves the complaint regardless.
 
-## Contract limitations requiring follow-up
+## Additional contracts and limitations
 
 ### Campus layout and health additions
 

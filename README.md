@@ -10,6 +10,8 @@ React web · Flutter Android · Express API · MongoDB
 
 [Quick start](#quick-start) · [Android APK](docs/deployment/ANDROID.md) · [Deployment](docs/deployment/VERCEL.md) · [Verification](docs/testing/RESULTS.md) · [API](docs/api/CONTRACTS.md)
 
+[Hosted frontend preview](https://clyra-lake.vercel.app) · [Download local-demo APK](https://github.com/samuelcollridgenaik-alt/clyra/releases/tag/v0.1.0-local-demo) · [Delivery PR](https://github.com/samuelcollridgenaik-alt/clyra/pull/3)
+
 </div>
 
 ---

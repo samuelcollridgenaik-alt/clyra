@@ -1,19 +1,45 @@
-# Setup and deployment constraints
+# Local development
 
-## Development environment
+## Demo (macOS/Linux)
 
-1. Install Node.js >=20, npm, Python >=3.11 and MongoDB; Flutter SDK + Android toolchain for mobile.
-2. Run `npm install` in `backend` and `web` and `pip install -r requirements.txt` in `ai-service`.
-3. Copy each `.env.example` to `.env` and insert your own strong secrets. The repo contains no credentials.
-4. Set `backend/MONGODB_URI` to MongoDB (Atlas or local). Use a MongoDB replica set when adding all-or-nothing multi-document transactions in a subsequent audited phase.
-5. Create an initial admin through `backend/scripts/bootstrapAdmin.js`, after `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` have been provided temporarily. Remove bootstrap credentials afterward.
-6. Configure departments and a campus/building/floor/room hierarchy before accepting student reports.
-7. Run the Node API (`npm run dev`), AI service (`uvicorn app.main:app --reload --port 8000`), React (`npm run dev`) and Flutter (first generate Android platform in a temporary shell; see root README, then `flutter run --dart-define=API_BASE_URL=http://10.0.2.2:4000/api/v1`).
-8. Set **different strong** `JWT_ACCESS_SECRET` and `AI_SHARED_SECRET`. Configure a 64-character hex `DEVICE_ENCRYPTION_KEY` only when FCM encrypted tokens are used. Configure `FIREBASE_SERVICE_ACCOUNT_JSON` only on server.
-9. Upload images only after Cloudinary account, authenticated asset retrieval and campus privacy policy are approved.
+Requires Node.js 22, MongoDB `mongod` on PATH and optionally Flutter 3.44.9 + Android SDK.
 
-## Production considerations
+```sh
+npm ci --prefix backend
+npm ci --prefix web
+node scripts/demo.mjs setup
+node scripts/demo.mjs start
+```
 
-HTTPS for all endpoints; CORS allowlist; secure refresh cookie; MongoDB backups, Atlas IP/network rules; private Python AI service (not exposed to Internet); service-to-service authentication; structured log retention; email provider before password reset; Cloudinary signed evidence URLs; FCM push setup and Android consent/permissions; data access audit; user acceptance tests; accessibility, performance and recovery checks. None of these are verified production configurations at the time of writing.
+Web: **http://localhost:5174**. API: **4001**. MongoDB: **27019**, loopback-only replica set, database `clyra_demo`.
 
-**External credentials required:** MongoDB URI, Cloudinary cloud name/API key/secret, Firebase service account, separate JWT and AI service secrets, encryption key for stored device tokens, and approved campus user policy.
+Read credentials locally with `node scripts/demo.mjs credentials`. Fictional users are admin/student/faculty/staff at `clyra-demo.invalid`. Generated secrets stay in ignored, owner-readable `.local/demo-config.json`; database files stay in `.local/mongodb`.
+
+Setup preserves existing demo data and refuses to reconfigure an unrelated database on port 27019. Run setup again after MongoDB stops. Ctrl+C stops web/API, not MongoDB. The helper uses `mongod --fork`; Windows users need manual setup.
+
+## Manual setup / Windows
+
+1. Start a MongoDB **replica set**; standalone MongoDB cannot support the required transactions.
+2. Copy backend/web `.env.example` to local `.env`. Supply your own JWT secret and MongoDB URI. Match API port, CORS origins and web `VITE_API_BASE_URL` (manual examples use API 4000/web 5173).
+3. Run `npm ci` then `npm run dev` in backend and web.
+4. Temporarily configure bootstrap admin email/password, run `npm run bootstrap-admin` in backend, then remove those credentials.
+5. As admin, configure departments/users and an active campus. Review four/five levels for each D–U block and Ground Floor convention before applying the layout. Add rooms/common areas manually.
+
+Registration is off by default. Text-only resolution is enabled only by the local demo; production still requires configured evidence handling and administrator verification.
+
+## MongoDB Compass
+
+Connect Compass using `mongodb://127.0.0.1:27019/clyra_demo?replicaSet=clyra-dev` and save it as **Clyra Local Demo**. No username/password is required for this loopback-only demonstration. Open `clyra_demo` to inspect `complaints`, `locations`, `users`, `assignments` and history/notifications. Do not expose port 27019 to the network. Compass is a viewer/client; the running `mongod` process is the database server.
+
+Create or update records through the app for demonstrations so validation, history and notifications stay consistent. Avoid showing session records or password hashes on a projector.
+
+### API health
+
+```sh
+curl http://localhost:4001/health
+curl http://localhost:4001/health/ready
+```
+
+Readiness returns HTTP 200 with `status: ready`, `service: clyra-api`, `database: connected`, or HTTP 503 without connection details.
+
+See [Android](ANDROID.md) and [Vercel](VERCEL.md). The optional AI service stays private; grievance submission works without trained models.

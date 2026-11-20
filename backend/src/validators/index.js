@@ -12,11 +12,13 @@ export const department=z.object({name:text(2,120),code:text(2,30),description:z
 export const departmentPatch=department.partial();
 export const location=z.object({name:text(2,120),code:text(1,40).optional(),type:z.enum(['CAMPUS','BUILDING','FLOOR','ROOM','COMMON_AREA']),parentLocationId:objectId.nullish(),description:z.string().max(500).optional()}).strict();
 export const locationPatch=location.partial();
+export const campusLayout=z.object({campusId:objectId,blocks:z.array(z.object({code:z.string().regex(/^[D-U]$/),floorCount:z.union([z.literal(4),z.literal(5)])}).strict()).min(1).max(18).refine(blocks=>new Set(blocks.map(block=>block.code)).size===blocks.length,'Block codes must be unique'),includeGroundFloor:z.boolean()}).strict();
 export const complaint=z.object({title:text(5,160),description:text(10,5000),locationId:objectId,category:z.enum(CATEGORIES).optional(),imageUrls:z.array(z.string().url()).max(5).optional()}).strict();
 export const complaintPatch=z.object({title:text(5,160).optional(),description:text(10,5000).optional()}).strict();
 export const review=z.object({decision:z.enum(['APPROVE','REJECT']),reason:text(4,1000).optional(),category:z.enum(CATEGORIES).optional(),priority:z.enum(PRIORITIES).optional(),overrideReason:text(4,1000).optional()}).strict();
 export const assign=z.object({departmentId:objectId,assignedTo:objectId,reason:text(4,1000).optional()}).strict();
-export const evidence=z.object({evidenceUrls:z.array(z.string().url()).min(1).max(8),remarks:text(4,1000).optional()}).strict();
+export const evidence=z.object({evidenceUrls:z.array(z.string().url()).max(8).default([]),remarks:text(4,1000).optional()}).strict();
+export const verification=z.object({accepted:z.boolean(),reason:text(4,1000).optional(),remarks:text(4,1000).optional()}).strict();
 export const feedback=z.object({complaintId:objectId,rating:z.number().int().min(1).max(5),comment:z.string().max(1000).optional()}).strict();
 export const announcement=z.object({title:text(4,160),description:text(5,3000),audience:z.array(z.enum(['STUDENT','FACULTY','STAFF','ADMIN'])).min(1),imageUrl:z.string().url().optional(),publishAt:z.string().datetime().optional(),expiresAt:z.string().datetime().optional(),isPublished:z.boolean().optional()}).strict();
 export function paging(query){const page=Math.min(100000,Math.max(1,Number.parseInt(query.page,10)||1));const limit=Math.min(100,Math.max(1,Number.parseInt(query.limit,10)||20));return{page,limit,skip:(page-1)*limit};}

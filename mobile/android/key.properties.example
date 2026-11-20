@@ -1,0 +1,5 @@
+# Copy to key.properties (ignored). Keep the keystore outside the repository.
+storeFile=/absolute/path/to/your-upload-keystore.jks
+storePassword=
+keyAlias=
+keyPassword=

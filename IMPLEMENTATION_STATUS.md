@@ -1,25 +1,23 @@
-# Implementation status — 2026-11-17
+# Implementation status · 20 November 2026
 
-The DOCX requires phase-by-phase implementation with explicit owner policy approvals. The snapshot is intended as a transparent starting product foundation. Status may be updated only after running and documenting verification.
+## Delivered locally
 
-| Blueprint phase | State | Notes |
-|---|---|---|
-| 1. Requirements & design | Documentation drafted, **approval pending** | Spec, decisions, diagrams, UI tokens |
-| 2. Database/backend | In progress | CRUD, auth, lifecycle source drafted; MongoDB integration not end-to-end verified |
-| 3. React web | In progress | Role-driven app; production UX/UAT pending |
-| 4. Flutter Android | In progress | Source provided; Android SDK/build validation needed |
-| 5. AI | Implemented untrained service + tests | 5 tests passed; **no trained model, no accuracy claims** |
-| 6. Notification/advanced | In progress | In-app persistence; external provider credentials needed |
-| 7. Testing | In progress | See testing results |
-| 8. Deployment/docs | Not deployed | Environment setup and validation remaining |
+- Shared grievance lifecycle, atomic MongoDB transactions, RBAC and session refresh/revocation tests.
+- React dashboard/task improvements and Flutter runtime crash regression fixes.
+- Admin D–U block editor, four/five levels per block, explicit Ground Floor convention, manual locations and complete searchable catalogs in both clients.
+- Database-aware readiness checks, reproducible demo setup, dependency lockfiles and versioned Android platform.
+- Web production bundle and optimized, development-signed local-demo APK. See [verification](docs/testing/RESULTS.md).
 
-Do **not** interpret untested scaffolds as production-ready functionality. Detailed delta tracking in `docs/testing/RESULTS.md`.
+## Deployment boundaries
 
-## Verification executed
+The hosted frontend is a preview until a public API is configured. The owner confirmed no hosted backend exists and requested APK sideloading, not Play Store submission. The local-demo APK needs the computer's backend over USB forwarding; it is not a standalone online release.
 
-- FastAPI: **5 passing tests** using local pytest.
-- **29** JavaScript/JSX files parsed with TypeScript parser; **0 parse errors**.
-- Python `compileall` and Node `--check` for critical backend files succeeded.
-- npm could not access package registry (**EAI_AGAIN**), and no Flutter SDK or live MongoDB was available, so full integration/build testing was **not** performed.
+## Still required
 
-A completed and deployed product remains a **future acceptance milestone**, not a result of this snapshot.
+1. Host Express and a MongoDB replica set; configure production secrets, backups and both clients.
+2. Confirm which D–U blocks have four/five levels and whether the count includes Ground Floor; save the reviewed layout in the admin UI.
+3. Configure/test protected media access, email/password reset and external notifications before promising these capabilities.
+4. Complete campus policy approval, accessibility/UAT, security and recovery checks before real-user rollout.
+5. Train/evaluate AI only with approved data. No model accuracy is claimed. IPA is deferred.
+
+No merge, Play Store upload or production database migration is part of this delivery.

@@ -1,11 +1,13 @@
 import React,{useEffect,useState} from 'react';import {Plus,Building2,MapPin,UsersRound,Search,BarChart3,Download,BrainCircuit} from 'lucide-react';import {PieChart,Pie,Cell,ResponsiveContainer,Tooltip,BarChart,Bar,XAxis,YAxis,CartesianGrid} from 'recharts';
 import {api} from '../lib/api.js';import {useAuth} from '../lib/auth.jsx';import {Field,Notice,State,Chip,PageHeading,niceDate} from '../components/common/UI.jsx';
+import {CampusLocations} from './CampusLocations.jsx';
 const management={
  departments:{title:'Departments',description:'Manage maintenance teams and their contact details.',fields:[['name','Department name'],['code','Unique code'],['description','Description'],['contactEmail','Contact email']]},
  locations:{title:'Campus facilities',description:'Campus, buildings, floors and rooms. Keep the hierarchy accurate.',fields:[['name','Location name'],['code','Location code'],['type','Location type'],['parentLocationId','Parent location']]},
  users:{title:'People & access',description:'Manage role-scoped accounts. Passwords are never displayed.',fields:[['fullName','Full name'],['email','Email'],['password','Initial password'],['role','Role'],['departmentId','Department']]}
 };
-export function Management({kind}){const cfg=management[kind],route=kind==='locations'?'/locations':kind==='users'?'/users':'/departments';const [rows,setRows]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[add,setAdd]=useState(false),[form,setForm]=useState({}),[departments,setDepartments]=useState([]),[locations,setLocations]=useState([]),[busy,setBusy]=useState(false);
+export function Management({kind}){return kind==='locations'?<CampusLocations/>:<GenericManagement kind={kind}/>;}
+function GenericManagement({kind}){const cfg=management[kind],route=kind==='locations'?'/locations':kind==='users'?'/users':'/departments';const [rows,setRows]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[add,setAdd]=useState(false),[form,setForm]=useState({}),[departments,setDepartments]=useState([]),[locations,setLocations]=useState([]),[busy,setBusy]=useState(false);
 async function load(){try{setRows(await api.get(route+'?limit=100'));if(kind==='users')setDepartments(await api.get('/departments?limit=100'));if(kind==='locations')setLocations(await api.get('/locations?limit=100'));}catch(e){setError(e.message);}}
 useEffect(()=>{setRows(null);setForm({});setAdd(false);load();},[kind]);
 async function submit(e){e.preventDefault();setBusy(true);setNotice('');try{await api.post(route,form);setNotice('Created successfully.');setAdd(false);setForm({});await load();}catch(e){setNotice(e.message);}finally{setBusy(false);}}

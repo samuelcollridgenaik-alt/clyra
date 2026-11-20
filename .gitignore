@@ -66,3 +66,12 @@ env/
 *.swo
 *.tmp
 *.bak
+.local/
+# Android platform sources are versioned; local SDK/signing files stay private.
+mobile/.metadata
+mobile/clyra.iml
+*.iml
+.vercel/
+*.hprof
+*.apk
+*.aab

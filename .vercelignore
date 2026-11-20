@@ -1,0 +1,12 @@
+.git
+.local
+**/.env
+**/.env.*
+**/node_modules
+**/build
+**/key.properties
+**/*.jks
+**/*.keystore
+mobile
+ai-service/datasets
+ai-service/artifacts

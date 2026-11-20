@@ -18,18 +18,8 @@ jobs:
     name: Backend checks
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    services:
-      mongodb:
-        image: mongo:7
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ping:1})'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
     env:
-      CLYRA_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/clyra_ci_test
+      CLYRA_TEST_MONGODB_URI: mongodb://127.0.0.1:27017/clyra_ci_test?replicaSet=clyra-ci
     defaults:
       run:
         working-directory: backend
@@ -39,7 +29,20 @@ jobs:
         with:
           node-version: '22'
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
+      - name: Start isolated MongoDB replica set
+        run: |
+          docker run -d --name clyra-mongo -p 127.0.0.1:27017:27017 mongo:7 --replSet clyra-ci --bind_ip_all
+          for attempt in $(seq 1 30); do
+            if docker exec clyra-mongo mongosh --quiet --eval 'db.adminCommand({ping:1})'; then break; fi
+            sleep 1
+          done
+          docker exec clyra-mongo mongosh --quiet --eval 'rs.initiate({_id:"clyra-ci",members:[{_id:0,host:"127.0.0.1:27017"}]})'
+          for attempt in $(seq 1 30); do
+            if docker exec clyra-mongo mongosh --quiet --eval 'if (!db.hello().isWritablePrimary) quit(1)'; then exit 0; fi
+            sleep 1
+          done
+          exit 1
       - name: Syntax checks
         run: npm run check
       - name: State-machine tests
@@ -60,9 +63,20 @@ jobs:
         with:
           node-version: '22'
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
+      - name: Client regression tests
+        run: npm test
+      - name: Release configuration regression tests
+        run: node --test ../scripts/tests/*.test.mjs
       - name: Build web app
         run: npm run build
+      - name: Attach production web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: clyra-web-build
+          path: web/dist
+          if-no-files-found: error
+          retention-days: 14
 
   flutter:
     name: Flutter analyze, test and Android debug APK
@@ -76,15 +90,10 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: '3.44.9'
           cache: true
       - name: Generate missing Android platform files
-        run: |
-          flutter create --platforms=android --project-name clyra .
-          # flutter create adds an example MyApp test when the Android scaffold is missing.
-          # Keep existing tracked tests, remove only the untracked template.
-          if ! git ls-files --error-unmatch test/widget_test.dart >/dev/null 2>&1; then
-            rm -f test/widget_test.dart
-          fi
+        run: node ../scripts/prepare-android.mjs
       - name: Install Flutter packages
         run: flutter pub get
       - name: Analyze Dart source
@@ -92,11 +101,11 @@ jobs:
       - name: Run Flutter tests
         run: flutter test
       - name: Build Android debug APK
-        run: flutter build apk --debug --dart-define=API_BASE_URL=http://10.0.2.2:4000/api/v1
+        run: flutter build apk --debug --dart-define=API_BASE_URL=http://10.0.2.2:4001/api/v1
       - name: Attach Android APK to workflow
         uses: actions/upload-artifact@v4
         with:
           name: clyra-android-debug
           path: mobile/build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 14

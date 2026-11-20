@@ -1,64 +1,84 @@
-# CLYRA — AI-Powered Campus Experience & Operations
+<div align="center">
 
-Blueprint-driven MCA final-year project. **This repository is an incremental implementation, not a deployed or fully validated finished product.** Read [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for actual scope. Original authoritative proposal is `CLYRA_CODEX_MASTER_BLUEPRINT.docx` (40 pages).
+<img src="web/public/clyra-mark.png" width="88" height="88" alt="Clyra logo" />
 
-## Architecture
+# clyra.
 
-- `backend/`: Express REST API, Mongoose/MongoDB `clyra_db`, JWT/RBAC, complaint lifecycle.
-- `web/`: React JavaScript/Tailwind SPA for administrators, faculty and staff using the shared API.
-- `mobile/`: Flutter/Dart Material 3 Android source, same API.
-- `ai-service/`: FastAPI service with explicit *model-unavailable* behavior until trained/evaluated artifacts exist.
-- `docs/`: contracts, source-traceable decisions, architecture, testing, deployment.
+**Clear reporting. Accountable resolution. A connected campus.**
 
-## Local run (Windows PowerShell or similar)
+React web · Flutter Android · Express API · MongoDB
 
-Prerequisites: Node.js 20+, Python 3.11+, MongoDB (prefer a replica set for multi-document transactions), Flutter SDK for Android, and optionally MongoDB Compass. Install dependencies yourself; no API keys are included.
+[Quick start](#quick-start) · [Android APK](docs/deployment/ANDROID.md) · [Deployment](docs/deployment/VERCEL.md) · [Verification](docs/testing/RESULTS.md) · [API](docs/api/CONTRACTS.md)
 
-```bash
-cd backend
-cp .env.example .env
-npm install
-npm run dev
+</div>
+
+---
+
+Clyra connects students and faculty with administrators and maintenance teams through one shared grievance workflow. Both clients use the same reports, assignments, history and resolution verification.
+
+**Current delivery:** a functional local demonstration with tested API/database workflows, a web build and sideloadable Android APK. The hosted frontend is a preview until a public backend is configured. No trained AI, external notification delivery or production readiness is claimed. [Full status →](IMPLEMENTATION_STATUS.md)
+
+## Highlights
+
+- Role-scoped reporting, assignment, work tracking and administrator verification.
+- **D–U blocks**, independently configurable **four/five levels**, explicit Ground Floor convention.
+- Manual rooms/common areas and searchable full paths in React and Flutter, beyond 100 locations.
+- Atomic history updates, real summary counts, refreshable sessions and visible error/retry states.
+
+The campus layout is additive and repeat-safe: existing/manual locations are preserved. Actual floor counts are reviewed by an administrator, not silently assumed.
+
+## Quick start
+
+Requires **Node.js 22**, **MongoDB on PATH** and optionally **Flutter 3.44.9 + Android SDK**. The helper targets macOS/Linux; [manual/Windows setup](docs/deployment/LOCAL.md) is available.
+
+```sh
+git clone https://github.com/samuelcollridgenaik-alt/clyra.git
+cd clyra
+# Until the delivery PR is merged:
+git switch codex/issue-2-demo-ready
+npm ci --prefix backend
+npm ci --prefix web
+node scripts/demo.mjs setup
+node scripts/demo.mjs start
 ```
 
-In a second terminal:
+Open **http://localhost:5174**. API: **4001**. MongoDB: **27019**.
 
-```bash
-cd web
-cp .env.example .env
-npm install
-npm run dev
-```
+In another terminal, run `node scripts/demo.mjs credentials` for the generated local password. Accounts: admin/student/faculty/staff at `clyra-demo.invalid`. Credentials and persistent demo data stay in ignored `.local/`; never commit them.
 
-AI service (optional; complaint workflow must work without it):
+For Android, follow the [APK guide](docs/deployment/ANDROID.md). Platform sources are included; do not run `flutter create` over the application.
 
-```bash
-cd ai-service
-python -m venv .venv
-# activate .venv for your OS
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-```
+## Repository map
 
-Mobile (Flutter SDK required):
+| Directory | Responsibility |
+|---|---|
+| `web/` | React JavaScript, Tailwind, Recharts, Vite |
+| `mobile/` | Flutter/Dart Material 3 Android |
+| `backend/` | Express REST API, JWT/RBAC, Mongoose transactions |
+| `ai-service/` | Optional private FastAPI adapter; explicit unavailable-model state |
+| `scripts/` | Local demo setup and Android packaging |
+| `docs/` | Contracts, architecture, verification, policies, deployment |
 
-```bash
+Both clients call Express, never MongoDB or the AI service directly. The [master blueprint](CLYRA_CODEX_MASTER_BLUEPRINT.docx) remains authoritative alongside [the specification](CLYRA_MASTER_SPEC.md).
+
+## Verification
+
+```sh
+npm run check --prefix backend
+npm test --prefix backend
+CLYRA_TEST_MONGODB_URI='mongodb://127.0.0.1:27019/clyra_ci_test?replicaSet=clyra-dev' npm run test:integration --prefix backend
+npm test --prefix web
+npm run build --prefix web
+node --test scripts/tests/*.test.mjs
 cd mobile
-# Generate missing Android platform in a temporary folder so existing Dart files are safe:
-flutter create --platforms=android --project-name clyra ../clyra_android_shell
-# Copy ../clyra_android_shell/android into mobile/android (do not overwrite lib/)
-flutter pub get
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:4000/api/v1
+flutter analyze --no-fatal-infos
+flutter test
 ```
 
-**Before creating users:** `backend/.env` must contain a strong JWT secret and a reachable MongoDB URI. To create the first administrator set `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` temporarily in `.env` and run `npm run bootstrap-admin`, then remove those values. Do not check `.env` into Git. Registration is disabled by default until campus policy is approved.
+Integration tests accept only isolated local `clyra_ci_test*` databases and remove their own test database. Never use real campus data. See [actual verification results](docs/testing/RESULTS.md), including warnings and remaining coverage.
 
-When using the Android emulator, `10.0.2.2` refers to the host PC. For a physical phone use the host LAN IP and an appropriate secure development networking setup.
+## Deployment & security
 
-## Tests
+Vercel hosts `web/` through GitHub integration. A **hosted MongoDB replica set and public HTTPS Express API are still required** for online functionality. [Deployment instructions](docs/deployment/VERCEL.md) cover cookie routing and private configuration.
 
-`npm test` in `backend/`, `pytest` in `ai-service/`, `flutter test` in `mobile/`, `npm run build` in `web/`. Actual command results are in `docs/testing/RESULTS.md`; no tests are claimed to pass without running.
-
-## Configuration
-
-The email provider, Cloudinary, Firebase Admin and model artifacts are not in this repo. Configuration requirements and open policies are documented in `docs/decisions/PENDING.md`. Never use localhost HTTP for production.
+Secrets, keystores, local databases and builds are excluded from Git. Media, FCM and email/password reset require additional setup. Text-only resolution is explicitly development-only. Read [pending campus policies](docs/decisions/PENDING.md) before accepting real users.
